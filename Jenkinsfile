@@ -9,9 +9,9 @@ pipeline {
         }
         stage ("running container from image"){
             steps {
-                sh "docker run -dit --name web03 -p 5000:5000 flask-app"
+                sh "docker run -dit --name web04 -p 5001:5000 flask-app"
                 sh "docker ps "
-                sh "docker logs web03"
+                sh "docker logs web04"
             }
         }
     }
