@@ -3,8 +3,8 @@ pipeline {
     stages {
         stage ("image build"){
             steps {
-                sh "sudo docker build -t flask-app ."
-                sh "sudo docker images |grep flask-app"
+                sh "docker build -t flask-app ."
+                sh "docker images |grep flask-app"
             }
         }
         stage ("running container from image"){
