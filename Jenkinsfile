@@ -1,18 +1,46 @@
 pipeline {
     agent any
+        environment {
+                PROJECT_ID = 'office-411914'
+                CLUSTER_NAME = 'cluster-1'
+                LOCATION = 'us-central1'
+                CREDENTIALS_ID = 'kubernetes'
+        }
+
     stages {
-        stage ("image build"){
-            steps {
-                sh "docker build -t flask-app ."
-                sh "docker images |grep flask-app"
+           
+            stage('Build Docker Image') {
+                    steps {
+                            sh 'whoami'
+                            script {
+                                    myimage = docker.build("lokeshtadepalli267/flask:${env.BUILD_ID}")
+                            }
+                    }
             }
-        }
-        stage ("running container from image"){
-            steps {
-                sh "docker run -dit --name web04 -p 5001:5000 flask-app"
-                sh "docker ps "
-                sh "docker logs web04"
+
+            stage("Push Docker Image") {
+                    steps {
+                            script {
+                                    echo "Push Docker Image"
+                                    withCredentials([string(credentialsId: 'dockerhub', variable: 'dockerhub')]) {
+                                        sh "docker login -u lokeshtadepalli267 -p ${dockerhub}"
+                                        sh "docker push lokeshtadepalli267/flask:${env.BUILD_ID}"
+                                    }
+                            }
+                    }
             }
-        }
+
+            stage('Deploy to K8s') {
+                    steps{
+                            echo "Deployment started ..."
+                            
+                          
+                                sh "sed -i 's/tagversion/${env.BUILD_ID}/g' deployment.yaml"
+                           
+                                echo "Start deployment of deployment.yaml"
+                                step([$class: 'KubernetesEngineBuilder', projectId: env.PROJECT_ID, clusterName: env.CLUSTER_NAME, location: env.LOCATION, manifestPattern: 'deployment.yaml', credentialsId: env.CREDENTIALS_ID, verifyDeployments: true])
+                            echo "Deployment Finished ..."
+                    }
+            }
     }
 }
